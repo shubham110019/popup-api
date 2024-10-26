@@ -44,11 +44,6 @@ const generateToken = (userId) => {
     return jwt.sign({ id: userId }, secretKey);
 };
 
-// const generateToken = (email, userId) => {
-//     const secretKey = '123t';
-//     return jwt.sign({ email, id: userId }, secretKey);
-// };
-
 // Register new user and send OTP
 exports.register = async (req, res) => {
   try {
@@ -117,6 +112,8 @@ exports.verifyOtp = async (req, res) => {
   }
 };
 
+
+
 // Login without OTP after verification
 exports.login = async (req, res) => {
   try {
@@ -133,7 +130,11 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials.' });
 
-    res.status(200).json({ message: 'Login successful', token: user.token });
+    // Update lastLogin field
+    user.lastLogin = Date.now(); // Set lastLogin to current date and time
+    await user.save(); // Save the updated user document
+
+    res.status(200).json({ message: 'Login successful', token: user.token, userId: user.userId });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -170,6 +171,7 @@ exports.getUserByToken = async (req, res) => {
           name: user.name,
           lastname: user.lastname,
           email: user.email,
+          userId: user.userId,
           isVerified: user.isVerified,
         },
       });
@@ -190,3 +192,55 @@ exports.getUserByToken = async (req, res) => {
 
 
   
+
+  // Update any user field (PUT)
+exports.updateUser = async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];  // Extract token from Authorization header
+
+  if (!token) {
+    return res.status(401).json({ message: 'Access denied, token missing!' });
+  }
+
+  try {
+    const secretKey = '123t';  // Use the same secret key used to sign the token
+    const decoded = jwt.verify(token, secretKey);  // Verify and decode the token
+
+    // Find the user by email from the decoded token
+    const user = await User.findOne({ email: decoded.id });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Dynamically update fields from the request body
+    const updatableFields = [
+      'name', 'lastname', 'email', 'otp', 'otpExpires', 'isVerified', 
+      'userPlan', 'userPlanType', 'createDate', 'lastLogin'
+    ];
+
+    updatableFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        if (field === 'password') {
+          // Hash password if it's being updated
+          user.password = bcrypt.hashSync(req.body.password, 10);
+        } else {
+          user[field] = req.body[field];
+        }
+      }
+    });
+
+    await user.save();
+
+    res.status(200).json({
+      message: 'User details updated successfully',
+    });
+
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired' });
+    }
+
+    console.error('Token verification failed:', error.message);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
