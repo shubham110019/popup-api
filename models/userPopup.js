@@ -4,6 +4,7 @@ const userSchema = new mongoose.Schema({
   campaignType: { type: String, default: 'popup' },
   campaignName: { type: String },
   siteId: { type: String },
+  siteUrl: { type: String },
   userId: { type: String },
   html: { type: String },
   divStructureStart: {type: String},

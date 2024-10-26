@@ -78,9 +78,47 @@ exports.fetchModalData = async (req, res) => {
       return res.status(404).json({ message: 'Website link not found' });
     }
   
-    res.status(200).json(website); // Return the modal data
+    res.status(200).json(website);
   } catch (error) {
     console.error('Error fetching modal data:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+
+
+// Fetch modal data by Site Id
+exports.fetchModalDataSiteId = async (req, res) => {
+  try {
+    const siteId = req.params.siteId; // Get user ID from request parameters
+
+    const website = await Website.find({ siteId: siteId }); // Adjust your query according to your schema
+    if (!website) {
+      return res.status(404).json({ message: 'Website link not found' });
+    }
+    res.status(200).json(website);
+  } catch (error) {
+    console.error('Error fetching modal data:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+
+
+
+// Delete website by _id
+exports.deleteWebsite = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const website = await Website.findByIdAndDelete(id);
+
+    if (!website) {
+      return res.status(404).json({ message: 'Website not found' });
+    }
+    res.status(200).json({ message: 'Website successfully deleted' });
+  } catch (error) {
+    console.error('Error deleting website:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

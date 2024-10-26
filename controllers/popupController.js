@@ -5,7 +5,7 @@ dotenv.config();
 
 exports.modaldata = async (req, res) => {
   try {
-    const { userId, html, css, js, popid, campaignName, campaignType, status, siteId, divStructureStart, divStructureEnd, defaultCss, defaultJs } = req.body;
+    const { userId, html, css, js, popid, campaignName, campaignType, status, siteId, divStructureStart, divStructureEnd, defaultCss, defaultJs, siteUrl } = req.body;
 
     if (!campaignName) {
       return res.status(400).json({ message: 'Please fill in the Campaign Name' });
@@ -26,6 +26,7 @@ exports.modaldata = async (req, res) => {
       js,
       popid,
       status,
+      siteUrl,
     });
 
     await modal.save();
@@ -71,7 +72,7 @@ exports.updateModalTrash = async (req, res) => {
     const { popid, trash, archives, status, html, css, js, divStructureStart,
       divStructureEnd,
       defaultCss,
-      defaultJs, } = req.body; 
+      defaultJs, siteUrl } = req.body; 
 
     if (!popid) {
       return res.status(400).json({ message: 'Popid is required' });
@@ -88,7 +89,9 @@ exports.updateModalTrash = async (req, res) => {
       ...(divStructureStart !== undefined && { divStructureStart }),
       ...(divStructureEnd !== undefined && { divStructureEnd }),
       ...(defaultCss !== undefined && { defaultCss }),
-      ...(defaultJs !== undefined && { defaultJs })
+      ...(defaultJs !== undefined && { defaultJs }),
+      ...(siteUrl !== undefined && { siteUrl })
+      
     };
 
     // Check if any fields are provided to update
